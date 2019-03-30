@@ -133,6 +133,7 @@ function buildArgs(args, optns) {
 		
 		if (optns.hasOwnProperty(attr)) {
 			val = optns[attr];
+			reversed = !!optn.long.match('--no-');
 			if (optn.optional && val) {
 				val = '';
 			}
@@ -149,7 +150,6 @@ function buildArgs(args, optns) {
 function getOptnAttr(optn) {
 	var attr;
 	if (optn.short) {
-		reversed = !!optn.long.match('--no-');
 		attr = toCamelCase(optn.long.replace(/^--no-|--/, ''));
 	} else {
 		attr = optn.long.replace(/^-/, '').toUpperCase();
