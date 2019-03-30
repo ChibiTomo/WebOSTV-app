@@ -2,9 +2,9 @@
   "name": "webostv-app",
   "version": "0.0.1",
   "description": "Simple cli for WebOSTV app",
-  "main": "index.js",
+  "main": "cli.js",
   "scripts": {
-    "test": "node index.js -V"
+    "test": "webostv-app -V"
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,8 @@
     "commander": "^2.19.0",
     "file-system": "^2.2.2",
     "path": "^0.12.7"
+  },
+  "bin": {
+	"webostv-app": "./cli.js"
   }
 }
