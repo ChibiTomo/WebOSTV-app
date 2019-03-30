@@ -1,6 +1,6 @@
 {
   "name": "webostv-app",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple cli for WebOSTV app",
   "main": "cli.js",
   "scripts": {
@@ -28,6 +28,6 @@
     "path": "^0.12.7"
   },
   "bin": {
-	"webostv-app": "./cli.js"
+    "webostv-app": "./cli.js"
   }
 }
