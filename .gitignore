@@ -1,0 +1,4 @@
+node_modules
+dist
+webos-meta-data
+**/*.ipk
