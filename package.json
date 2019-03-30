@@ -4,7 +4,11 @@
   "description": "Simple cli for WebOSTV app",
   "main": "cli.js",
   "scripts": {
-    "test": "webostv-app -V"
+    "test": "webostv-app -V",
+	"test-meta": "webostv-app meta dist",
+	"test-package": "webostv-app --sdk-cli-path \"D:/webOS_TV_SDK/CLI\" package dist",
+	"test-install": "webostv-app --sdk-cli-path \"D:/webOS_TV_SDK/CLI\" install",
+	"test-inspect": "webostv-app --sdk-cli-path \"D:/webOS_TV_SDK/CLI\" inspect"
   },
   "repository": {
     "type": "git",

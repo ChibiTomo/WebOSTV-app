@@ -11,7 +11,8 @@ program
 	.option('--sdk-cli-path <path>', '(Required) Path to the WebOSTV SDK CLI dir')
 	.option('--source-dir <path>', 'Path to the dir containing all metadatas', 'webos-meta-data')
 	.option('--appinfo-name <name>', 'Name of the JSON file containing appinfo (eg: appinfo.json)', 'appinfo.json')
-	.option('--no-override', 'Prevent appinfo.json to be overridden by package.json');
+	.option('--no-override', 'Prevent appinfo.json to be overridden by package.json')
+	.option('--no-auto-bind', 'Prevent automatic binding to your app of options passed to ares ');
 
 program
 	.command('meta <destDir>')
@@ -63,27 +64,38 @@ function buildAresCommand(name, cmds) {
 	command
 		.description('Shortcut to ares-'+name)
 		.action(function(args, optns) {
+			buildArgs(args, optns);
+			autoBind(args, optns);
 			runScript(name, args, optns);
 		});
 }
 
-function meta(destDir, optns) {
-	var fname = optns.appinfoName;
-	var srcDir = optns.sourceDir;
+function meta(destDir, optns) {	
+	var appInfo = getAppInfo(optns.parent);
 	
-	mustExists(srcDir+'/'+fname);
-	
-	var appInfo = JSON.parse(fs.readFileSync(srcDir+'/'+fname, 'utf-8'));
-	
-	appInfo.version = env.npm_package_version;
-	appInfo.title = env.npm_package_name;
-	appInfo.description = env.npm_package_description;
-	
+	var fname = optns.parent.appinfoName;
+	var srcDir = optns.parent.sourceDir;
 	copyImages(appInfo, srcDir, destDir);
 	
 	var appInfoStr = JSON.stringify(appInfo);
 	fs.mkdirSync(destDir, {recursive: true});
 	fs.writeFileSync(destDir+'/'+fname, appInfoStr);
+}
+
+function getAppInfo(optns) {
+	var fname = optns.appinfoName;
+	var srcDir = optns.sourceDir;
+	
+	mustExists(srcDir+'/'+fname);
+	var appInfo = JSON.parse(fs.readFileSync(srcDir+'/'+fname, 'utf-8'));
+	
+	if (optns.override) {
+		appInfo.version = env.npm_package_version;
+		appInfo.title = env.npm_package_name;
+		appInfo.appDescription = env.npm_package_description;
+	}
+	
+	return appInfo;
 }
 
 function copyImages(appInfo, srcDir, destDir) {
@@ -117,12 +129,7 @@ function buildArgs(args, optns) {
 	var optn, attr, val, reversed = false;
 	for (var i = 0; i < optns.options.length; ++i) {
 		optn = optns.options[i];
-		if (optn.short) {
-			reversed = !!optn.long.match('--no-');
-			attr = toCamelCase(optn.long.replace(/^--no-|--/, ''));
-		} else {
-			attr = optn.long.replace(/^-/, '').toUpperCase();
-		}
+		attr = getOptnAttr(optn);
 		
 		if (optns.hasOwnProperty(attr)) {
 			val = optns[attr];
@@ -139,11 +146,49 @@ function buildArgs(args, optns) {
 	}
 }
 
+function getOptnAttr(optn) {
+	var attr;
+	if (optn.short) {
+		reversed = !!optn.long.match('--no-');
+		attr = toCamelCase(optn.long.replace(/^--no-|--/, ''));
+	} else {
+		attr = optn.long.replace(/^-/, '').toUpperCase();
+	}
+	return attr;
+}
+
+function autoBind(args, optns) {
+	if (!optns.parent.autoBind) {
+		return;
+	}
+	var appInfo = getAppInfo(optns.parent);
+	var isApp = appInfo.type === 'web';
+	
+	const optnToOverrideSrv = {
+		'inspect': ['--service', '{id}'],
+		'install': ['{id}_{version}_all.ipk']
+	};
+	const optnToOverrideApp = {
+		'inspect': ['--app', '{id}'],
+		'install': ['{id}_{version}_all.ipk']
+	};
+	const optnToOverride = isApp? optnToOverrideApp : optnToOverrideSrv;
+
+	
+	var newArgs = optnToOverride[optns._name];
+	if (newArgs) {
+		for (var j = 0; j < newArgs.length; ++j) {
+			args.push(newArgs[j].replace(/{.*?}/gi, function (rep) {
+				return appInfo[rep.slice(1, -1)];
+			}));
+		}
+	}
+}
+
 function runScript(name, args, optns) {
 	if (!optns.parent.sdkCliPath) {
 		throw new Error('You must specifie a path to WebOSTV SDK CLI dir');
 	}
-	buildArgs(args, optns)
     // keep track of whether callback has been invoked to prevent multiple invocations
     var invoked = false;
 	
